@@ -1,0 +1,7 @@
+project_id = "bksmcodqqdnbeobfhipf"
+
+[functions.receive-sms]
+verify_jwt = false
+
+[functions.send-alert]
+verify_jwt = false
