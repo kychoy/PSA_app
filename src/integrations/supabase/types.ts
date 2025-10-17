@@ -10,310 +10,272 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "13.0.4"
   }
   public: {
     Tables: {
-      activity_logs: {
-        Row: {
-          activity_type: string
-          created_at: string
-          elderly_profile_id: string
-          id: string
-          logged_by: string | null
-          notes: string | null
-        }
-        Insert: {
-          activity_type: string
-          created_at?: string
-          elderly_profile_id: string
-          id?: string
-          logged_by?: string | null
-          notes?: string | null
-        }
-        Update: {
-          activity_type?: string
-          created_at?: string
-          elderly_profile_id?: string
-          id?: string
-          logged_by?: string | null
-          notes?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "activity_logs_elderly_profile_id_fkey"
-            columns: ["elderly_profile_id"]
-            isOneToOne: false
-            referencedRelation: "elderly_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       alert_history: {
         Row: {
-          acknowledged_at: string | null
-          alert_method: Database["public"]["Enums"]["alert_method"]
-          contact_id: string | null
-          created_at: string
-          elderly_profile_id: string
-          error_message: string | null
+          alert_type: string
+          contact_email: string | null
+          contact_phone: string | null
+          cp141_phone_number: string | null
+          created_at: string | null
           id: string
           message: string
+          notification_method: string
+          response_log: string | null
           sent_at: string | null
-          status: Database["public"]["Enums"]["alert_status"]
+          status: string | null
+          user_id: string | null
         }
         Insert: {
-          acknowledged_at?: string | null
-          alert_method: Database["public"]["Enums"]["alert_method"]
-          contact_id?: string | null
-          created_at?: string
-          elderly_profile_id: string
-          error_message?: string | null
+          alert_type: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          cp141_phone_number?: string | null
+          created_at?: string | null
           id?: string
           message: string
+          notification_method: string
+          response_log?: string | null
           sent_at?: string | null
-          status?: Database["public"]["Enums"]["alert_status"]
+          status?: string | null
+          user_id?: string | null
         }
         Update: {
-          acknowledged_at?: string | null
-          alert_method?: Database["public"]["Enums"]["alert_method"]
-          contact_id?: string | null
-          created_at?: string
-          elderly_profile_id?: string
-          error_message?: string | null
+          alert_type?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          cp141_phone_number?: string | null
+          created_at?: string | null
           id?: string
           message?: string
+          notification_method?: string
+          response_log?: string | null
           sent_at?: string | null
-          status?: Database["public"]["Enums"]["alert_status"]
+          status?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "alert_history_contact_id_fkey"
-            columns: ["contact_id"]
+            foreignKeyName: "alert_history_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "contacts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "alert_history_elderly_profile_id_fkey"
-            columns: ["elderly_profile_id"]
-            isOneToOne: false
-            referencedRelation: "elderly_profiles"
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
       }
-      contacts: {
+      cp141_sms: {
         Row: {
-          alert_methods: Database["public"]["Enums"]["alert_method"][]
-          created_at: string
-          elderly_profile_id: string
-          email: string | null
-          full_name: string
-          id: string
-          is_primary: boolean
-          phone: string | null
-          relationship: string | null
-        }
-        Insert: {
-          alert_methods?: Database["public"]["Enums"]["alert_method"][]
-          created_at?: string
-          elderly_profile_id: string
-          email?: string | null
-          full_name: string
-          id?: string
-          is_primary?: boolean
-          phone?: string | null
-          relationship?: string | null
-        }
-        Update: {
-          alert_methods?: Database["public"]["Enums"]["alert_method"][]
-          created_at?: string
-          elderly_profile_id?: string
-          email?: string | null
-          full_name?: string
-          id?: string
-          is_primary?: boolean
-          phone?: string | null
-          relationship?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "contacts_elderly_profile_id_fkey"
-            columns: ["elderly_profile_id"]
-            isOneToOne: false
-            referencedRelation: "elderly_profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      device_activity: {
-        Row: {
-          created_at: string
+          created_at: string | null
           device_id: string | null
-          elderly_profile_id: string
           id: string
+          message: string | null
+          phone_number: string
           received_at: string
-          sms_body: string | null
-          sms_from: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           device_id?: string | null
-          elderly_profile_id: string
           id?: string
-          received_at?: string
-          sms_body?: string | null
-          sms_from?: string | null
+          message?: string | null
+          phone_number: string
+          received_at: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           device_id?: string | null
-          elderly_profile_id?: string
           id?: string
+          message?: string | null
+          phone_number?: string
           received_at?: string
-          sms_body?: string | null
-          sms_from?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "device_activity_elderly_profile_id_fkey"
-            columns: ["elderly_profile_id"]
+            foreignKeyName: "cp141_sms_device_id_fkey"
+            columns: ["device_id"]
             isOneToOne: false
-            referencedRelation: "elderly_profiles"
+            referencedRelation: "device"
             referencedColumns: ["id"]
           },
         ]
       }
-      devices: {
+      device: {
         Row: {
-          created_at: string
-          device_name: string
+          created_at: string | null
+          device_id: string
+          firmware: string | null
           id: string
-          inactivity_threshold_hours: number
-          is_active: boolean
-          phone_number: string
-          updated_at: string
-          user_id: string
+          location: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
-          device_name: string
+          created_at?: string | null
+          device_id: string
+          firmware?: string | null
           id?: string
-          inactivity_threshold_hours?: number
-          is_active?: boolean
-          phone_number: string
-          updated_at?: string
-          user_id: string
+          location?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
-          device_name?: string
+          created_at?: string | null
+          device_id?: string
+          firmware?: string | null
           id?: string
-          inactivity_threshold_hours?: number
-          is_active?: boolean
+          location?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "device_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      phone_numbers_cp141: {
+        Row: {
+          created_at: string | null
+          id: string
+          no_contact_period: unknown | null
+          phone_number: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          no_contact_period?: unknown | null
+          phone_number: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          no_contact_period?: unknown | null
           phone_number?: string
-          updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "phone_numbers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      elderly_profiles: {
+      Test: {
         Row: {
-          address: string | null
-          age: number | null
-          caregiver_id: string
+          content: string | null
           created_at: string
-          device_id: string | null
-          device_phone_number: string | null
-          full_name: string
-          id: string
-          inactivity_threshold_hours: number
-          last_activity_at: string | null
-          medical_notes: string | null
-          status: string
-          updated_at: string
+          embedding: string | null
+          id: number
+          metadata: Json | null
         }
         Insert: {
-          address?: string | null
-          age?: number | null
-          caregiver_id: string
+          content?: string | null
           created_at?: string
-          device_id?: string | null
-          device_phone_number?: string | null
-          full_name: string
-          id?: string
-          inactivity_threshold_hours?: number
-          last_activity_at?: string | null
-          medical_notes?: string | null
-          status?: string
-          updated_at?: string
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
         }
         Update: {
-          address?: string | null
-          age?: number | null
-          caregiver_id?: string
+          content?: string | null
           created_at?: string
-          device_id?: string | null
-          device_phone_number?: string | null
-          full_name?: string
-          id?: string
-          inactivity_threshold_hours?: number
-          last_activity_at?: string | null
-          medical_notes?: string | null
-          status?: string
-          updated_at?: string
+          embedding?: string | null
+          id?: number
+          metadata?: Json | null
         }
         Relationships: []
       }
-      profiles: {
+      user_contacts: {
         Row: {
-          created_at: string
-          email: string
-          full_name: string
+          contact_name: string | null
+          created_at: string | null
+          email: string | null
           id: string
           notification_method: string | null
           phone_number: string | null
-          updated_at: string
+          relationship: string | null
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
-          email: string
-          full_name: string
-          id: string
-          notification_method?: string | null
-          phone_number?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          full_name?: string
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string | null
           id?: string
           notification_method?: string | null
           phone_number?: string | null
-          updated_at?: string
+          relationship?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Update: {
+          contact_name?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          notification_method?: string | null
+          phone_number?: string | null
+          relationship?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_contacts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      user_roles: {
+      users: {
         Row: {
-          created_at: string
+          created_at: string | null
+          email: string
+          full_name: string | null
           id: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          no_contact_period: unknown | null
+          notification_method: string | null
+          password_hash: string
+          phone_number: string | null
+          role: string | null
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
+          email: string
+          full_name?: string | null
           id?: string
-          role: Database["public"]["Enums"]["app_role"]
-          user_id: string
+          no_contact_period?: unknown | null
+          notification_method?: string | null
+          password_hash: string
+          phone_number?: string | null
+          role?: string | null
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
+          email?: string
+          full_name?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          user_id?: string
+          no_contact_period?: unknown | null
+          notification_method?: string | null
+          password_hash?: string
+          phone_number?: string | null
+          role?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -322,18 +284,63 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
+      get_latest_sms: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          last_sms_time: string
+          no_contact_period: string
+          phone_number: string
+        }[]
+      }
+      get_latest_sms_details: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          last_sms_time: string
+          no_contact_period: string
+          phone_number: string
+          user_id: string
+        }[]
+      }
+      get_user: {
+        Args: { p_phone_number: string }
+        Returns: {
+          notification_method: string
+          user_email: string
+          user_id: string
+          user_phone: string
+        }[]
+      }
+      get_user_contact: {
+        Args: { p_phone_number: string }
+        Returns: {
+          contact_email: string
+          contact_name: string
+          contact_phone: string
+          notification_method: string
+          user_email: string
+          user_id: string
+          user_phone: string
+        }[]
+      }
+      get_user_id_by_email: {
+        Args: { search_email: string }
+        Returns: {
+          user_id: string
+        }[]
+      }
+      match_documents: {
+        Args: { filter: Json; match_count: number; query_embedding: string }
+        Returns: {
+          content: string
+          embedding: string
+          id: number
+          metadata: Json
+          similarity: number
+        }[]
       }
     }
     Enums: {
-      alert_method: "email" | "sms" | "voice_call"
-      alert_status: "pending" | "sent" | "failed" | "acknowledged"
-      app_role: "admin" | "caregiver" | "user"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -460,10 +467,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      alert_method: ["email", "sms", "voice_call"],
-      alert_status: ["pending", "sent", "failed", "acknowledged"],
-      app_role: ["admin", "caregiver", "user"],
-    },
+    Enums: {},
   },
 } as const
