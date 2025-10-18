@@ -14,6 +14,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Only signup with Supabase Auth; trigger function handles user profile
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
@@ -28,36 +29,10 @@ const Auth = () => {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, phone_number: phoneNumber },
         emailRedirectTo: `${window.location.origin}/dashboard`,
       },
     });
-
-    if (!error && authData.user) {
-      const { error: profileError } = await supabase
-        .from("users")
-        .insert([
-          {
-            id: authData.user.id,
-            email,
-            full_name: fullName,
-            phone_number: phoneNumber || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
-
-      if (profileError) {
-        console.error("User table insert error:", profileError);
-        toast({
-          variant: "destructive",
-          title: "Sign up failed",
-          description: `Error creating user profile: ${profileError.message}`,
-        });
-        setLoading(false);
-        return;
-      }
-    }
 
     setLoading(false);
 
