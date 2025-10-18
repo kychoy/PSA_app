@@ -19,19 +19,18 @@ import {
 
 interface Contact {
   id: string;
-  full_name: string;
+  contact_name: string;
   relationship: string | null;
   email: string | null;
-  phone: string | null;
-  alert_methods: string[];
-  is_primary: boolean;
+  phone_number: string | null;
+  notification_method: string[]; // array for multi-select
 }
 
 interface ContactListProps {
-  elderlyProfileId: string;
+  userId: string;
 }
 
-export default function ContactList({ elderlyProfileId }: ContactListProps) {
+export default function ContactList({ userId }: ContactListProps) {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -42,14 +41,14 @@ export default function ContactList({ elderlyProfileId }: ContactListProps) {
     fetchContacts();
 
     const channel = supabase
-      .channel(`contacts_${elderlyProfileId}`)
+      .channel(`user_contacts_${userId}`)
       .on(
         "postgres_changes",
-        { 
-          event: "*", 
-          schema: "public", 
-          table: "contacts",
-          filter: `elderly_profile_id=eq.${elderlyProfileId}`
+        {
+          event: "*",
+          schema: "public",
+          table: "user_contacts",
+          filter: `user_id=eq.${userId}`,
         },
         () => {
           fetchContacts();
@@ -60,15 +59,15 @@ export default function ContactList({ elderlyProfileId }: ContactListProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [elderlyProfileId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   const fetchContacts = async () => {
     try {
       const { data, error } = await supabase
-        .from("contacts")
+        .from("user_contacts")
         .select("*")
-        .eq("elderly_profile_id", elderlyProfileId)
-        .order("is_primary", { ascending: false })
+        .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -92,7 +91,7 @@ export default function ContactList({ elderlyProfileId }: ContactListProps) {
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from("contacts")
+        .from("user_contacts")
         .delete()
         .eq("id", id);
 
@@ -115,6 +114,7 @@ export default function ContactList({ elderlyProfileId }: ContactListProps) {
   const handleDialogClose = () => {
     setShowAddDialog(false);
     setEditingContact(null);
+    fetchContacts();
   };
 
   const getAlertMethodIcon = (method: string) => {
@@ -122,6 +122,7 @@ export default function ContactList({ elderlyProfileId }: ContactListProps) {
       case "email":
         return <Mail className="h-3 w-3" />;
       case "sms":
+        return <Phone className="h-3 w-3" />;
       case "voice_call":
         return <Phone className="h-3 w-3" />;
       default:
@@ -169,10 +170,7 @@ export default function ContactList({ elderlyProfileId }: ContactListProps) {
               <div className="flex items-start justify-between">
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="font-semibold">{contact.full_name}</h4>
-                    {contact.is_primary && (
-                      <Badge variant="default">Primary</Badge>
-                    )}
+                    <h4 className="font-semibold">{contact.contact_name}</h4>
                     {contact.relationship && (
                       <Badge variant="secondary">{contact.relationship}</Badge>
                     )}
@@ -184,15 +182,15 @@ export default function ContactList({ elderlyProfileId }: ContactListProps) {
                         {contact.email}
                       </div>
                     )}
-                    {contact.phone && (
+                    {contact.phone_number && (
                       <div className="flex items-center gap-2">
                         <Phone className="h-3 w-3" />
-                        {contact.phone}
+                        {contact.phone_number}
                       </div>
                     )}
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-medium">Alert methods:</span>
-                      {contact.alert_methods?.map((method) => (
+                      {contact.notification_method?.map((method) => (
                         <Badge key={method} variant="outline" className="gap-1">
                           {getAlertMethodIcon(method)}
                           <span className="capitalize">{method.replace("_", " ")}</span>
@@ -226,7 +224,7 @@ export default function ContactList({ elderlyProfileId }: ContactListProps) {
       <AddContactDialog
         open={showAddDialog}
         onOpenChange={handleDialogClose}
-        elderlyProfileId={elderlyProfileId}
+        userId={userId}
         contact={editingContact}
       />
 

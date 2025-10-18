@@ -18,60 +18,55 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface Contact {
   id: string;
-  full_name: string;
+  contact_name: string;
   relationship: string | null;
   email: string | null;
-  phone: string | null;
-  alert_methods: string[];
-  is_primary: boolean;
+  phone_number: string | null;
+  notification_method: string[];
 }
 
 interface AddContactDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  elderlyProfileId: string;
+  userId: string;
   contact?: Contact | null;
 }
 
 export function AddContactDialog({
   open,
   onOpenChange,
-  elderlyProfileId,
+  userId,
   contact,
 }: AddContactDialogProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    full_name: "",
+    contact_name: "",
     relationship: "",
     email: "",
-    phone: "",
-    alert_methods: ["email"] as string[],
-    is_primary: false,
+    phone_number: "",
+    notification_method: ["email"],
   });
 
   useEffect(() => {
     if (contact) {
       setFormData({
-        full_name: contact.full_name,
+        contact_name: contact.contact_name,
         relationship: contact.relationship || "",
         email: contact.email || "",
-        phone: contact.phone || "",
-        alert_methods: contact.alert_methods || ["email"],
-        is_primary: contact.is_primary,
+        phone_number: contact.phone_number || "",
+        notification_method: contact.notification_method || ["email"],
       });
     } else {
       setFormData({
-        full_name: "",
+        contact_name: "",
         relationship: "",
         email: "",
-        phone: "",
-        alert_methods: ["email"],
-        is_primary: false,
+        phone_number: "",
+        notification_method: ["email"],
       });
     }
   }, [contact, open]);
@@ -81,31 +76,31 @@ export function AddContactDialog({
     setLoading(true);
 
     try {
-      if (!formData.full_name.trim()) {
+      if (!formData.contact_name.trim()) {
         throw new Error("Name is required");
       }
 
-      if (!formData.email && !formData.phone) {
+      if (!formData.email && !formData.phone_number) {
         throw new Error("Please provide at least email or phone number");
       }
 
-      if (formData.alert_methods.length === 0) {
+      if (formData.notification_method.length === 0) {
         throw new Error("Please select at least one alert method");
       }
 
-      const contactData = {
-        full_name: formData.full_name.trim(),
-        relationship: formData.relationship.trim() || null,
-        email: formData.email.trim() || null,
-        phone: formData.phone.trim() || null,
-        alert_methods: formData.alert_methods as ("email" | "sms" | "voice_call")[],
-        is_primary: formData.is_primary,
-        elderly_profile_id: elderlyProfileId,
-      };
+    const contactData = {
+       contact_name: formData.contact_name.trim(),
+       relationship: formData.relationship.trim() || null,
+       email: formData.email.trim() || null,
+       phone_number: formData.phone_number.trim() || null,
+       notification_method: formData.notification_method, // array
+       user_id: userId, // from props
+};
+
 
       if (contact) {
         const { error } = await supabase
-          .from("contacts")
+          .from("user_contacts")
           .update(contactData)
           .eq("id", contact.id);
 
@@ -117,7 +112,7 @@ export function AddContactDialog({
         });
       } else {
         const { error } = await supabase
-          .from("contacts")
+          .from("user_contacts")
           .insert([contactData]);
 
         if (error) throw error;
@@ -151,14 +146,14 @@ export function AddContactDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="full_name">Full Name *</Label>
+            <Label htmlFor="contact_name">Contact Name *</Label>
             <Input
-              id="full_name"
-              value={formData.full_name}
+              id="contact_name"
+              value={formData.contact_name}
               onChange={(e) =>
-                setFormData({ ...formData, full_name: e.target.value })
+                setFormData({ ...formData, contact_name: e.target.value })
               }
-              placeholder="Enter full name"
+              placeholder="Enter contact name"
               required
             />
           </div>
@@ -189,13 +184,13 @@ export function AddContactDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number</Label>
+            <Label htmlFor="phone_number">Phone Number</Label>
             <Input
-              id="phone"
+              id="phone_number"
               type="tel"
-              value={formData.phone}
+              value={formData.phone_number}
               onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
+                setFormData({ ...formData, phone_number: e.target.value })
               }
               placeholder="+1234567890"
             />
@@ -210,12 +205,12 @@ export function AddContactDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="email-method"
-                  checked={formData.alert_methods.includes("email")}
+                  checked={formData.notification_method.includes("email")}
                   onCheckedChange={(checked) => {
                     const methods = checked
-                      ? [...formData.alert_methods, "email"]
-                      : formData.alert_methods.filter((m) => m !== "email");
-                    setFormData({ ...formData, alert_methods: methods });
+                      ? [...formData.notification_method, "email"]
+                      : formData.notification_method.filter((m) => m !== "email");
+                    setFormData({ ...formData, notification_method: methods });
                   }}
                 />
                 <label
@@ -228,12 +223,12 @@ export function AddContactDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="sms-method"
-                  checked={formData.alert_methods.includes("sms")}
+                  checked={formData.notification_method.includes("sms")}
                   onCheckedChange={(checked) => {
                     const methods = checked
-                      ? [...formData.alert_methods, "sms"]
-                      : formData.alert_methods.filter((m) => m !== "sms");
-                    setFormData({ ...formData, alert_methods: methods });
+                      ? [...formData.notification_method, "sms"]
+                      : formData.notification_method.filter((m) => m !== "sms");
+                    setFormData({ ...formData, notification_method: methods });
                   }}
                 />
                 <label
@@ -246,12 +241,12 @@ export function AddContactDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="voice-method"
-                  checked={formData.alert_methods.includes("voice_call")}
+                  checked={formData.notification_method.includes("voice_call")}
                   onCheckedChange={(checked) => {
                     const methods = checked
-                      ? [...formData.alert_methods, "voice_call"]
-                      : formData.alert_methods.filter((m) => m !== "voice_call");
-                    setFormData({ ...formData, alert_methods: methods });
+                      ? [...formData.notification_method, "voice_call"]
+                      : formData.notification_method.filter((m) => m !== "voice_call");
+                    setFormData({ ...formData, notification_method: methods });
                   }}
                 />
                 <label
@@ -264,21 +259,6 @@ export function AddContactDialog({
             </div>
           </div>
 
-          <div className="flex items-center justify-between space-x-2">
-            <div className="space-y-0.5">
-              <Label htmlFor="is_primary">Primary Contact</Label>
-              <p className="text-sm text-muted-foreground">
-                Primary contacts are notified first
-              </p>
-            </div>
-            <Switch
-              id="is_primary"
-              checked={formData.is_primary}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, is_primary: checked })
-              }
-            />
-          </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button

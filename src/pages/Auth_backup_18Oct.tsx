@@ -35,30 +35,17 @@ const Auth = () => {
     });
 
     if (!error && authData.user) {
-      // Insert user profile into "users" table
+      // Update profile with additional details
       const { error: profileError } = await supabase
-        .from("users")
-        .insert([
-          {
-            id: authData.user.id,
-            email,
-            full_name: fullName,
-            phone_number: phoneNumber || null,
-            notification_method: notificationMethod || 'email',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
+        .from("profiles")
+        .update({
+          phone_number: phoneNumber || null,
+          notification_method: notificationMethod || 'email',
+        })
+        .eq("id", authData.user.id);
 
       if (profileError) {
-        console.error("User table insert error:", profileError);
-        toast({
-          variant: "destructive",
-          title: "Sign up failed",
-          description: `Error creating user profile: ${profileError.message}`,
-        });
-        setLoading(false);
-        return;
+        console.error("Profile update error:", profileError);
       }
     }
 
