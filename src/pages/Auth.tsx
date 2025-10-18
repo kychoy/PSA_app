@@ -23,7 +23,6 @@ const Auth = () => {
     const password = formData.get("signup-password") as string;
     const fullName = formData.get("full-name") as string;
     const phoneNumber = formData.get("phone-number") as string;
-    const notificationMethod = formData.get("notification-method") as string;
 
     const { data: authData, error } = await supabase.auth.signUp({
       email,
@@ -35,7 +34,6 @@ const Auth = () => {
     });
 
     if (!error && authData.user) {
-      // Insert user profile into "users" table
       const { error: profileError } = await supabase
         .from("users")
         .insert([
@@ -44,7 +42,6 @@ const Auth = () => {
             email,
             full_name: fullName,
             phone_number: phoneNumber || null,
-            notification_method: notificationMethod || 'email',
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
@@ -187,19 +184,6 @@ const Auth = () => {
                     type="tel"
                     placeholder="+1234567890"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="notification-method">Preferred Alert Method</Label>
-                  <select
-                    id="notification-method"
-                    name="notification-method"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    defaultValue="email"
-                  >
-                    <option value="email">Email</option>
-                    <option value="sms">SMS</option>
-                    <option value="voice">Voice Call</option>
-                  </select>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? "Creating account..." : "Create Account"}
