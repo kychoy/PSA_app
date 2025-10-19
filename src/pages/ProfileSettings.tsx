@@ -12,8 +12,14 @@ interface ProfileData {
   full_name: string;
   email: string;
   phone_number: string | null;
-  notification_method: string;
+  notification_method: string[]; // Now expecting an array of strings
 }
+
+const NOTIFICATION_OPTIONS = [
+  { value: "email", label: "Email" },
+  { value: "sms", label: "SMS" },
+  { value: "voice", label: "Voice Call" },
+];
 
 const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
@@ -21,7 +27,7 @@ const ProfileSettings = () => {
     full_name: "",
     email: "",
     phone_number: "",
-    notification_method: "email",
+    notification_method: [],
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -37,7 +43,6 @@ const ProfileSettings = () => {
         navigate("/auth");
         return;
       }
-      // Query users table instead of profiles
       const { data, error } = await supabase
         .from("users")
         .select("full_name, email, phone_number, notification_method")
@@ -46,14 +51,12 @@ const ProfileSettings = () => {
 
       if (error) throw error;
 
-      if (data) {
-        setProfileData({
-          full_name: data.full_name || "",
-          email: data.email || "",
-          phone_number: data.phone_number || "",
-          notification_method: data.notification_method || "email",
-        });
-      }
+      setProfileData({
+        full_name: data.full_name || "",
+        email: data.email || "",
+        phone_number: data.phone_number || "",
+        notification_method: Array.isArray(data.notification_method) ? data.notification_method : [],
+      });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -61,6 +64,17 @@ const ProfileSettings = () => {
         description: "Failed to load profile data",
       });
     }
+  };
+
+  const handleNotificationChange = (method: string) => {
+    setProfileData((prev) => {
+      const current = prev.notification_method || [];
+      if (current.includes(method)) {
+        return { ...prev, notification_method: current.filter((m) => m !== method) };
+      } else {
+        return { ...prev, notification_method: [...current, method] };
+      }
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +85,6 @@ const ProfileSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Update users table instead of profiles
       const { error } = await supabase
         .from("users")
         .update({
@@ -162,21 +175,23 @@ const ProfileSettings = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="notification_method">Preferred Alert Method</Label>
-                <select
-                  id="notification_method"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={profileData.notification_method}
-                  onChange={(e) =>
-                    setProfileData({ ...profileData, notification_method: e.target.value })
-                  }
-                >
-                  <option value="email">Email</option>
-                  <option value="sms">SMS</option>
-                  <option value="voice">Voice Call</option>
-                </select>
+                <Label>Preferred Alert Methods</Label>
+                <div className="flex flex-col gap-2">
+                  {NOTIFICATION_OPTIONS.map((opt) => (
+                    <label key={opt.value} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        value={opt.value}
+                        checked={profileData.notification_method.includes(opt.value)}
+                        onChange={() => handleNotificationChange(opt.value)}
+                        className="accent-primary"
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  Choose how you want to receive alerts for inactivity
+                  Choose all that apply for receiving alerts
                 </p>
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
