@@ -37,9 +37,9 @@ const ProfileSettings = () => {
         navigate("/auth");
         return;
       }
-
+      // Query users table instead of profiles
       const { data, error } = await supabase
-        .from("profiles")
+        .from("users")
         .select("full_name, email, phone_number, notification_method")
         .eq("id", user.id)
         .single();
@@ -71,8 +71,9 @@ const ProfileSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Update users table instead of profiles
       const { error } = await supabase
-        .from("profiles")
+        .from("users")
         .update({
           full_name: profileData.full_name,
           phone_number: profileData.phone_number || null,
@@ -135,7 +136,6 @@ const ProfileSettings = () => {
                   required
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -149,7 +149,6 @@ const ProfileSettings = () => {
                   Email cannot be changed
                 </p>
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="phone_number">Phone Number</Label>
                 <Input
@@ -162,7 +161,6 @@ const ProfileSettings = () => {
                   placeholder="+1234567890"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="notification_method">Preferred Alert Method</Label>
                 <select
@@ -181,7 +179,6 @@ const ProfileSettings = () => {
                   Choose how you want to receive alerts for inactivity
                 </p>
               </div>
-
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Saving..." : "Save Changes"}
               </Button>
