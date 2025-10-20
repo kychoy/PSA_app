@@ -4,25 +4,33 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Activity, Clock, User } from "lucide-react";
+import { ArrowLeft, Activity, Clock, Smartphone } from "lucide-react";
 import ContactList from "@/components/dashboard/ContactList";
 import AlertHistory from "@/components/dashboard/AlertHistory";
 
-interface ElderlyProfile {
+// Table: phone_numbers_cp141
+interface PhoneProfileData {
   id: string;
-  full_name: string;
-  age: number | null;
+  location: string;
+  phone_number: string;
   last_activity_at: string | null;
-  inactivity_threshold_hours: number;
+  no_contact_period: string; // interval, e.g. "24:00:00"
+  active: boolean;
   status: string;
   created_at: string;
 }
 
-const ElderlyProfile = () => {
+const intervalToHours = (interval: string) => {
+  if (!interval) return "N/A";
+  const parts = interval.split(":");
+  return parseInt(parts[0], 10);
+};
+
+const PhoneProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [profile, setProfile] = useState<ElderlyProfile | null>(null);
+  const [profile, setProfile] = useState<PhoneProfileData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,10 +39,10 @@ const ElderlyProfile = () => {
 
   const loadProfile = async () => {
     if (!id) return;
-    
+
     setLoading(true);
     const { data, error } = await supabase
-      .from("elderly_profiles")
+      .from("phone_numbers_cp141")
       .select("*")
       .eq("id", id)
       .single();
@@ -56,15 +64,18 @@ const ElderlyProfile = () => {
     if (!profile || !profile.last_activity_at) {
       return { status: "unknown", color: "text-gray-500", message: "No activity recorded" };
     }
-    
     const lastActivity = new Date(profile.last_activity_at);
     const now = new Date();
     const hoursSince = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursSince < profile.inactivity_threshold_hours) {
+    const threshold = intervalToHours(profile.no_contact_period);
+    if (hoursSince < threshold) {
       return { status: "active", color: "text-green-500", message: "Active recently" };
     } else {
-      return { status: "inactive", color: "text-red-500", message: `Inactive for ${Math.floor(hoursSince)}h` };
+      return {
+        status: "inactive",
+        color: "text-red-500",
+        message: `Inactive for ${Math.floor(hoursSince)}h`
+      };
     }
   };
 
@@ -101,9 +112,9 @@ const ElderlyProfile = () => {
             <CardHeader>
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-2xl">{profile.full_name}</CardTitle>
+                  <CardTitle className="text-2xl">{profile.location}</CardTitle>
                   <CardDescription>
-                    {profile.age ? `${profile.age} years old` : "Age not specified"}
+                    {profile.phone_number}
                   </CardDescription>
                 </div>
                 <div className={`text-3xl ${activityStatus.color}`}>
@@ -122,7 +133,7 @@ const ElderlyProfile = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 {profile.last_activity_at && (
                   <div className="flex items-center gap-2">
                     <Clock className="w-5 h-5 text-muted-foreground" />
@@ -136,11 +147,20 @@ const ElderlyProfile = () => {
                 )}
 
                 <div className="flex items-center gap-2">
-                  <User className="w-5 h-5 text-muted-foreground" />
+                  <Smartphone className="w-5 h-5 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-medium">Alert Threshold</p>
                     <p className="text-sm text-muted-foreground">
-                      {profile.inactivity_threshold_hours} hours
+                      {intervalToHours(profile.no_contact_period)} hours
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium">Status</p>
+                    <p className="text-sm text-muted-foreground">
+                      {profile.active ? "Active" : "Inactive"}
                     </p>
                   </div>
                 </div>
@@ -156,7 +176,7 @@ const ElderlyProfile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ContactList elderlyProfileId={profile.id} />
+              <ContactList phoneProfileId={profile.id} />
             </CardContent>
           </Card>
 
@@ -168,7 +188,7 @@ const ElderlyProfile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <AlertHistory elderlyProfileId={profile.id} />
+              <AlertHistory phoneProfileId={profile.id} />
             </CardContent>
           </Card>
         </div>
@@ -177,4 +197,4 @@ const ElderlyProfile = () => {
   );
 };
 
-export default ElderlyProfile;
+export default PhoneProfile;
