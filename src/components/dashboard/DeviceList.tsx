@@ -7,44 +7,51 @@ import { useToast } from "@/hooks/use-toast";
 import { AddDeviceDialog } from "./AddDeviceDialog";
 import { Badge } from "@/components/ui/badge";
 
-interface Device {
+interface PhoneEntry {
   id: string;
-  device_name: string;
   phone_number: string;
-  inactivity_threshold_hours: number;
-  is_active: boolean;
+  location: string;
+  no_contact_period: string; // interval string, e.g. "24:00:00"
+  active: boolean;
   created_at: string;
 }
 
+const intervalToHours = (interval: string) => {
+  // Simple handling: expects format 'N:00:00'
+  if (!interval) return "N/A";
+  const parts = interval.split(":");
+  return parseInt(parts[0], 10);
+};
+
 export const DeviceList = () => {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [entries, setEntries] = useState<PhoneEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+  const [editingEntry, setEditingEntry] = useState<PhoneEntry | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadDevices();
+    loadPhones();
   }, []);
 
-  const loadDevices = async () => {
+  const loadPhones = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data, error } = await supabase
-        .from("devices")
+        .from("phone_numbers_cp141")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setDevices(data || []);
+      setEntries(data || []);
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load devices",
+        description: "Failed to load phone entries",
       });
     } finally {
       setLoading(false);
@@ -54,7 +61,7 @@ export const DeviceList = () => {
   const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
-        .from("devices")
+        .from("phone_numbers_cp141")
         .delete()
         .eq("id", id);
 
@@ -62,81 +69,81 @@ export const DeviceList = () => {
 
       toast({
         title: "Success",
-        description: "Device deleted successfully",
+        description: "Entry deleted successfully",
       });
-      loadDevices();
+      loadPhones();
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete device",
+        description: "Failed to delete entry",
       });
     }
   };
 
-  const handleEdit = (device: Device) => {
-    setEditingDevice(device);
+  const handleEdit = (entry: PhoneEntry) => {
+    setEditingEntry(entry);
     setDialogOpen(true);
   };
 
   const handleDialogClose = () => {
     setDialogOpen(false);
-    setEditingDevice(null);
-    loadDevices();
+    setEditingEntry(null);
+    loadPhones();
   };
 
   if (loading) {
-    return <div>Loading devices...</div>;
+    return <div>Loading entries...</div>;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">My Devices</h2>
-          <p className="text-muted-foreground">Manage your monitoring devices</p>
+          <h2 className="text-2xl font-bold">Phone Locations</h2>
+          <p className="text-muted-foreground">Manage monitored phone numbers and locations</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Device
+          Add Phone
         </Button>
       </div>
 
-      {devices.length === 0 ? (
+      {entries.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-10">
             <Smartphone className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-center">
-              No devices yet. Add your first monitoring device to get started.
+              No phone entries yet. Add your first phone location to get started.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {devices.map((device) => (
-            <Card key={device.id}>
+          {entries.map((entry) => (
+            <Card key={entry.id}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">
                     <Smartphone className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">{device.device_name}</CardTitle>
+                    <CardTitle className="text-lg">{entry.location}</CardTitle>
                   </div>
-                  <Badge variant={device.is_active ? "default" : "secondary"}>
-                    {device.is_active ? "Active" : "Inactive"}
+                  <Badge variant={entry.active ? "default" : "secondary"}>
+                    {entry.active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <CardDescription>{device.phone_number}</CardDescription>
+                <CardDescription>{entry.phone_number}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    Inactivity threshold: {device.inactivity_threshold_hours} hours
+                    Inactivity threshold: {intervalToHours(entry.no_contact_period)} hours
                   </p>
                   <div className="flex gap-2 mt-4">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleEdit(device)}
+                      onClick={() => handleEdit(entry)}
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -144,7 +151,7 @@ export const DeviceList = () => {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={() => handleDelete(device.id)}
+                      onClick={() => handleDelete(entry.id)}
                     >
                       <Trash2 className="h-4 w-4 mr-1" />
                       Delete
@@ -160,7 +167,7 @@ export const DeviceList = () => {
       <AddDeviceDialog
         open={dialogOpen}
         onOpenChange={handleDialogClose}
-        editDevice={editingDevice}
+        editPhoneNumber={editingEntry}
       />
     </div>
   );
