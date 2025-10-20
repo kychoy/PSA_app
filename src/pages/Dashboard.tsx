@@ -5,22 +5,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, User, LogOut, Activity, AlertCircle, Clock, Smartphone } from "lucide-react";
-import { AddElderlyDialog } from "@/components/dashboard/AddElderlyDialog";
+import { AddDeviceDialog } from "@/components/dashboard/AddDeviceDialog";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import psaLogo from "@/assets/psa-logo.jpeg";
 
-interface ElderlyProfile {
+interface PhoneProfile {
   id: string;
-  full_name: string;
-  age: number | null;
+  location: string;
+  phone_number: string;
   last_activity_at: string | null;
-  inactivity_threshold_hours: number;
-  status: string;
+  no_contact_period: string; // stored as interval, e.g. "24:00:00"
+  active: boolean;
 }
+
+const intervalToHours = (interval: string) => {
+  if (!interval) return "N/A";
+  const parts = interval.split(":");
+  return parseInt(parts[0], 10);
+};
 
 const Dashboard = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [profiles, setProfiles] = useState<ElderlyProfile[]>([]);
+  const [devices, setDevices] = useState<PhoneProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const navigate = useNavigate();
@@ -34,7 +40,6 @@ const Dashboard = () => {
         navigate("/auth");
       }
     });
-
     return () => subscription.unsubscribe();
   }, [navigate]);
 
@@ -45,24 +50,23 @@ const Dashboard = () => {
       return;
     }
     setUser(session.user);
-    await loadProfiles();
+    await loadDevices();
   };
 
-  const loadProfiles = async () => {
+  const loadDevices = async () => {
     setLoading(true);
     const { data, error } = await supabase
-      .from("elderly_profiles")
+      .from("phone_numbers_cp141")
       .select("*")
       .order("created_at", { ascending: false });
-
     if (error) {
       toast({
         variant: "destructive",
-        title: "Error loading profiles",
+        title: "Error loading devices",
         description: error.message,
       });
     } else {
-      setProfiles(data || []);
+      setDevices(data || []);
     }
     setLoading(false);
   };
@@ -72,14 +76,13 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  const getActivityStatus = (profile: ElderlyProfile) => {
-    if (!profile.last_activity_at) return { status: "unknown", color: "text-gray-500", message: "No activity recorded" };
-    
-    const lastActivity = new Date(profile.last_activity_at);
+  const getActivityStatus = (device: PhoneProfile) => {
+    if (!device.last_activity_at) return { status: "unknown", color: "text-gray-500", message: "No activity recorded" };
+    const lastActivity = new Date(device.last_activity_at);
     const now = new Date();
     const hoursSince = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
-    
-    if (hoursSince < profile.inactivity_threshold_hours) {
+    const threshold = intervalToHours(device.no_contact_period);
+    if (hoursSince < threshold) {
       return { status: "active", color: "text-green-500", message: "Active recently" };
     } else {
       return { status: "inactive", color: "text-red-500", message: `Inactive for ${Math.floor(hoursSince)}h` };
@@ -126,51 +129,51 @@ const Dashboard = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h2 className="text-3xl font-bold">Monitored Individuals</h2>
+            <h2 className="text-3xl font-bold">Monitored Devices</h2>
             <p className="text-muted-foreground mt-1">
-              Manage and monitor elderly individuals for inactivity
+              Manage and monitor device phone numbers and locations for inactivity
             </p>
           </div>
           <Button onClick={() => setShowAddDialog(true)}>
             <Plus className="w-4 h-4 mr-2" />
-            Add Person
+            Add Device
           </Button>
         </div>
 
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading profiles...</p>
+            <p className="text-muted-foreground">Loading devices...</p>
           </div>
-        ) : profiles.length === 0 ? (
+        ) : devices.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-16">
               <AlertCircle className="w-16 h-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No profiles yet</h3>
+              <h3 className="text-xl font-semibold mb-2">No devices yet</h3>
               <p className="text-muted-foreground mb-4">
-                Add your first elderly profile to start monitoring
+                Add your first device to start monitoring
               </p>
               <Button onClick={() => setShowAddDialog(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Add First Person
+                Add First Device
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {profiles.map((profile) => {
-              const activityStatus = getActivityStatus(profile);
+            {devices.map((device) => {
+              const activityStatus = getActivityStatus(device);
               return (
                 <Card
-                  key={profile.id}
+                  key={device.id}
                   className="hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/profile/${profile.id}`)}
+                  onClick={() => navigate(`/profile/${device.id}`)}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <div>
-                        <CardTitle className="text-xl">{profile.full_name}</CardTitle>
+                        <CardTitle className="text-xl">{device.location}</CardTitle>
                         <CardDescription>
-                          {profile.age ? `${profile.age} years old` : "Age not specified"}
+                          {device.phone_number}
                         </CardDescription>
                       </div>
                       <div className={`text-2xl ${activityStatus.color}`}>
@@ -187,7 +190,7 @@ const Dashboard = () => {
                         </span>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        Alert threshold: {profile.inactivity_threshold_hours}h
+                        Alert threshold: {intervalToHours(device.no_contact_period)}h
                       </div>
                     </div>
                   </CardContent>
@@ -198,10 +201,10 @@ const Dashboard = () => {
         )}
       </main>
 
-      <AddElderlyDialog 
+      <AddDeviceDialog 
         open={showAddDialog} 
         onOpenChange={setShowAddDialog}
-        onSuccess={loadProfiles}
+        onSuccess={loadDevices}
       />
     </div>
   );
