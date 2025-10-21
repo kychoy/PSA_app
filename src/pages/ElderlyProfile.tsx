@@ -11,6 +11,7 @@ import AlertHistory from "@/components/dashboard/AlertHistory";
 // Table: phone_numbers_cp141
 interface PhoneProfileData {
   id: string;
+  user_id: string; // <-- Add this
   location: string;
   phone_number: string;
   last_activity_at: string | null;
@@ -176,7 +177,8 @@ const PhoneProfile = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ContactList phoneProfileId={profile.id} />
+              {/* Key fix: pass userId, not phoneProfileId */}
+              <ContactList userId={profile.user_id} />
             </CardContent>
           </Card>
 
@@ -198,3 +200,4 @@ const PhoneProfile = () => {
 };
 
 export default PhoneProfile;
+
