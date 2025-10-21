@@ -23,7 +23,7 @@ interface Contact {
   relationship: string | null;
   email: string | null;
   phone_number: string | null;
-  notification_method: string[]; // array for multi-select
+  notification_method: string[]; // multi-select
 }
 
 interface ContactListProps {
@@ -50,9 +50,7 @@ export default function ContactList({ userId }: ContactListProps) {
           table: "user_contacts",
           filter: `user_id=eq.${userId}`,
         },
-        () => {
-          fetchContacts();
-        }
+        () => fetchContacts()
       )
       .subscribe();
 
@@ -122,8 +120,7 @@ export default function ContactList({ userId }: ContactListProps) {
       case "email":
         return <Mail className="h-3 w-3" />;
       case "sms":
-        return <Phone className="h-3 w-3" />;
-      case "voice_call":
+      case "voice":
         return <Phone className="h-3 w-3" />;
       default:
         return <Mail className="h-3 w-3" />;
