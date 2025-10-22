@@ -4,11 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, User, LogOut, Activity, AlertCircle, Clock, Smartphone, CheckCircle } from "lucide-react";
+import { Plus, User, LogOut, Activity, AlertCircle, Clock, Smartphone } from "lucide-react";
 import { AddDeviceDialog } from "@/components/dashboard/AddDeviceDialog";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import psaLogo from "@/assets/psa-logo.jpeg";
-
 
 interface PhoneProfile {
   id: string;
@@ -32,7 +31,6 @@ const Dashboard = () => {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [testLoading, setTestLoading] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -79,36 +77,15 @@ const Dashboard = () => {
   };
 
   const getActivityStatus = (device: PhoneProfile) => {
-    if (!device.last_activity_at) {
-      return { status: "unknown", color: "text-gray-500", message: "No activity recorded", isActive: false };
-    }
+    if (!device.last_activity_at) return { status: "unknown", color: "text-gray-500", message: "No activity recorded" };
     const lastActivity = new Date(device.last_activity_at);
     const now = new Date();
     const hoursSince = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
     const threshold = intervalToHours(device.no_contact_period);
     if (hoursSince < threshold) {
-      return { status: "active", color: "text-green-500", message: "Active recently", isActive: true };
+      return { status: "active", color: "text-green-500", message: "Active recently" };
     } else {
-      return { status: "inactive", color: "text-red-500", message: `Inactive for ${Math.floor(hoursSince)}h`, isActive: false };
-    }
-  };
-
-  // --- New function for Test button ---
-  const handleTestWebhook = async () => {
-    setTestLoading(true);
-    try {
-      const res = await fetch("https://n8n.vocahk.com/webhook/6be3ae5f-45c2-4c12-b410-2e1fb4cdedc3", {
-        method: "POST",
-      });
-      if (res.ok) {
-        toast({ title: "Test webhook triggered!", description: "Webhook executed successfully." });
-      } else {
-        toast({ variant: "destructive", title: "Webhook error", description: "Failed to trigger webhook." });
-      }
-    } catch (err) {
-      toast({ variant: "destructive", title: "Webhook error", description: String(err) });
-    } finally {
-      setTestLoading(false);
+      return { status: "inactive", color: "text-red-500", message: `Inactive for ${Math.floor(hoursSince)}h` };
     }
   };
 
@@ -157,21 +134,12 @@ const Dashboard = () => {
               Manage and monitor device phone numbers and locations for inactivity
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setShowAddDialog(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Device
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={handleTestWebhook}
-              disabled={testLoading}
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              {testLoading ? "Testing..." : "Test"}
-            </Button>
-          </div>
+          <Button onClick={() => setShowAddDialog(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Device
+          </Button>
         </div>
+
         {loading ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Loading devices...</p>
@@ -208,24 +176,8 @@ const Dashboard = () => {
                           {device.phone_number}
                         </CardDescription>
                       </div>
-                      <div className={`flex flex-col items-end`}>
-                        <div className={`text-2xl ${activityStatus.color}`}>
-                          <Activity className="w-6 h-6" />
-                        </div>
-                        {/* Active status indicator */}
-                        <div className="mt-1 text-xs font-semibold">
-                          {activityStatus.isActive ? (
-                            <span className="text-green-600 flex items-center">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="text-red-500 flex items-center">
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              Inactive
-                            </span>
-                          )}
-                        </div>
+                      <div className={`text-2xl ${activityStatus.color}`}>
+                        <Activity className="w-6 h-6" />
                       </div>
                     </div>
                   </CardHeader>
@@ -248,6 +200,7 @@ const Dashboard = () => {
           </div>
         )}
       </main>
+
       <AddDeviceDialog 
         open={showAddDialog} 
         onOpenChange={setShowAddDialog}
