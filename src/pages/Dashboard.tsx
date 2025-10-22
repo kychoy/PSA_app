@@ -9,14 +9,15 @@ import { AddDeviceDialog } from "@/components/dashboard/AddDeviceDialog";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import psaLogo from "@/assets/psa-logo.jpeg";
 
-
 interface PhoneProfile {
   id: string;
-  location: string;
+  user_id: string;
   phone_number: string;
-  last_activity_at: string | null;
-  no_contact_period: string; // stored as interval, e.g. "24:00:00"
+  created_at: string;
+  no_contact_period: string;
+  location: string;
   active: boolean;
+  last_activity_at: string | null;
 }
 
 const intervalToHours = (interval: string) => {
@@ -30,9 +31,9 @@ const Dashboard = () => {
   const [devices, setDevices] = useState<PhoneProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [testLoading, setTestLoading] = useState(false);
 
   useEffect(() => {
     checkUser();
@@ -78,22 +79,7 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  const getActivityStatus = (device: PhoneProfile) => {
-    if (!device.last_activity_at) {
-      return { status: "unknown", color: "text-gray-500", message: "No activity recorded", isActive: false };
-    }
-    const lastActivity = new Date(device.last_activity_at);
-    const now = new Date();
-    const hoursSince = (now.getTime() - lastActivity.getTime()) / (1000 * 60 * 60);
-    const threshold = intervalToHours(device.no_contact_period);
-    if (hoursSince < threshold) {
-      return { status: "active", color: "text-green-500", message: "Active recently", isActive: true };
-    } else {
-      return { status: "inactive", color: "text-red-500", message: `Inactive for ${Math.floor(hoursSince)}h`, isActive: false };
-    }
-  };
-
-  // --- New function for Test button ---
+  // New function for Test button
   const handleTestWebhook = async () => {
     setTestLoading(true);
     try {
@@ -193,7 +179,6 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {devices.map((device) => {
-              const activityStatus = getActivityStatus(device);
               return (
                 <Card
                   key={device.id}
@@ -208,13 +193,12 @@ const Dashboard = () => {
                           {device.phone_number}
                         </CardDescription>
                       </div>
-                      <div className={`flex flex-col items-end`}>
-                        <div className={`text-2xl ${activityStatus.color}`}>
+                      <div className="flex flex-col items-end">
+                        <div className={`text-2xl ${device.active ? "text-green-500" : "text-red-500"}`}>
                           <Activity className="w-6 h-6" />
                         </div>
-                        {/* Active status indicator */}
                         <div className="mt-1 text-xs font-semibold">
-                          {activityStatus.isActive ? (
+                          {device.active ? (
                             <span className="text-green-600 flex items-center">
                               <CheckCircle className="w-3 h-3 mr-1" />
                               Active
@@ -233,8 +217,8 @@ const Dashboard = () => {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm">
                         <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span className={activityStatus.color}>
-                          {activityStatus.message}
+                        <span className={device.active ? "text-green-500" : "text-red-500"}>
+                          {device.active ? "Active recently" : "Inactive"}
                         </span>
                       </div>
                       <div className="text-sm text-muted-foreground">
