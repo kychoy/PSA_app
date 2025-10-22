@@ -179,56 +179,66 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {devices.map((device) => {
-              return (
-                <Card
-                  key={device.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/profile/${device.id}`)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-xl">{device.location}</CardTitle>
-                        <CardDescription>
-                          {device.phone_number}
-                        </CardDescription>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <div className={`text-2xl ${device.active ? "text-green-500" : "text-red-500"}`}>
-                          <Activity className="w-6 h-6" />
-                        </div>
-                        <div className="mt-1 text-xs font-semibold">
-                          {device.active ? (
-                            <span className="text-green-600 flex items-center">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="text-red-500 flex items-center">
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              Inactive
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span className={device.active ? "text-green-500" : "text-red-500"}>
-                          {device.active ? "Active recently" : "Inactive"}
-                        </span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Alert threshold: {intervalToHours(device.no_contact_period)}h
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+  // Format last_activity_at string, fallback to "No activity recorded"
+  let lastActivityLabel = "No activity recorded";
+  if (device.last_activity_at) {
+    const dateObj = new Date(device.last_activity_at);
+    const now = new Date();
+    const diffHours = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60));
+    lastActivityLabel = `Last activity: ${dateObj.toLocaleString()} (${diffHours}h ago)`;
+  }
+
+  return (
+    <Card
+      key={device.id}
+      className="hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => navigate(`/profile/${device.id}`)}
+    >
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-xl">{device.location}</CardTitle>
+            <CardDescription>
+              {device.phone_number}
+            </CardDescription>
+          </div>
+          <div className="flex flex-col items-end">
+            <div className={`text-2xl ${device.active ? "text-green-500" : "text-red-500"}`}>
+              <Activity className="w-6 h-6" />
+            </div>
+            <div className="mt-1 text-xs font-semibold">
+              {device.active ? (
+                <span className="text-green-600 flex items-center">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Active
+                </span>
+              ) : (
+                <span className="text-red-500 flex items-center">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  Inactive
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <span>
+              {lastActivityLabel}
+            </span>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Alert threshold: {intervalToHours(device.no_contact_period)}h
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+})}
+
           </div>
         )}
       </main>
