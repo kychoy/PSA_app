@@ -241,11 +241,11 @@ export function AddContactDialog({
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="voice-method"
-                  checked={formData.notification_method.includes("voice_call")}
+                  checked={formData.notification_method.includes("voice")}
                   onCheckedChange={(checked) => {
                     const methods = checked
-                      ? [...formData.notification_method, "voice_call"]
-                      : formData.notification_method.filter((m) => m !== "voice_call");
+                      ? [...formData.notification_method, "voice"]
+                      : formData.notification_method.filter((m) => m !== "voice");
                     setFormData({ ...formData, notification_method: methods });
                   }}
                 />
