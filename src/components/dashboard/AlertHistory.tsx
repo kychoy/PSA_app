@@ -5,6 +5,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Mail, Phone, PhoneCall, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Pass in currentUserId and optionally a phoneNumber to filter further
+interface AlertHistoryProps {
+  userId: string;
+  phoneNumbers: string[];
+  // Optionally, to filter by a single device phone number, add:
+  // phoneNumber?: string;
+}
+
 interface AlertHistoryItem {
   id: string;
   alert_type: string;
@@ -12,14 +20,13 @@ interface AlertHistoryItem {
   status: string;
   sent_at: string | null;
   created_at: string;
-  message: string;
   response_log: string | null;
   contact_email: string | null;
   contact_phone: string | null;
   cp141_phone_number: string | null;
 }
 
-const AlertHistory = () => {
+const AlertHistory = ({ userId, phoneNumbers }: AlertHistoryProps) => {
   const [alerts, setAlerts] = useState<AlertHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -27,16 +34,23 @@ const AlertHistory = () => {
   useEffect(() => {
     loadAlertHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userId, phoneNumbers?.join(",")]);
 
   const loadAlertHistory = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    // Only fetch alerts for current user & their phone numbers
+    let query = supabase
       .from("alert_history")
       .select(
-        "id, alert_type, notification_method, status, sent_at, created_at, message, response_log, contact_email, contact_phone, cp141_phone_number"
+        "id, alert_type, notification_method, status, sent_at, created_at, response_log, contact_email, contact_phone, cp141_phone_number"
       )
-      .order("created_at", { ascending: false });
+      .eq("user_id", userId);
+
+    if (phoneNumbers.length) {
+      query = query.in("cp141_phone_number", phoneNumbers);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
 
     if (error) {
       toast({
@@ -92,21 +106,6 @@ const AlertHistory = () => {
     }
   };
 
-  const getContactInfo = (alert: AlertHistoryItem) => {
-    if (alert.notification_method?.toLowerCase() === "email" && alert.contact_email) {
-      return alert.contact_email;
-    }
-    if (
-      (alert.notification_method?.toLowerCase() === "sms" ||
-        alert.notification_method?.toLowerCase() === "voice_call" ||
-        alert.notification_method?.toLowerCase() === "voice") &&
-      alert.contact_phone
-    ) {
-      return alert.contact_phone;
-    }
-    return alert.cp141_phone_number || "-";
-  };
-
   if (loading) {
     return <p className="text-center text-muted-foreground py-8">Loading alert history...</p>;
   }
@@ -125,10 +124,10 @@ const AlertHistory = () => {
         <TableHeader>
           <TableRow>
             <TableHead>Date & Time</TableHead>
-            <TableHead>Contact</TableHead>
+            <TableHead>Email</TableHead>
             <TableHead>Method</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Message</TableHead>
+            <TableHead>Device</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -139,17 +138,17 @@ const AlertHistory = () => {
                   ? new Date(alert.sent_at).toLocaleString()
                   : new Date(alert.created_at).toLocaleString()}
               </TableCell>
-              <TableCell>{getContactInfo(alert)}</TableCell>
+              <TableCell>{alert.contact_email}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   {getMethodIcon(alert.notification_method)}
-                  <span className="capitalize">{alert.notification_method.replace("_", " ")}</span>
+                  <span className="capitalize">
+                    {alert.notification_method.replace("_", " ")}
+                  </span>
                 </div>
               </TableCell>
               <TableCell>{getStatusBadge(alert.status)}</TableCell>
-              <TableCell className="max-w-xs truncate">
-                {alert.message}
-              </TableCell>
+              <TableCell>{alert.cp141_phone_number ?? "-"}</TableCell>
             </TableRow>
           ))}
         </TableBody>
