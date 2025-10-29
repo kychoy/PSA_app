@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+  import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -35,21 +35,16 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Load user and set up session watcher just once
   useEffect(() => {
     checkUser();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (!session?.user) navigate("/auth");
+      if (!session?.user) {
+        navigate("/auth");
+      }
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
-
-  // When user is set, load devices for this user only
-  useEffect(() => {
-    if (user) loadDevices();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
 
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -58,19 +53,14 @@ const Dashboard = () => {
       return;
     }
     setUser(session.user);
+    await loadDevices();
   };
 
   const loadDevices = async () => {
     setLoading(true);
-    if (!user) {
-      setDevices([]);
-      setLoading(false);
-      return;
-    }
     const { data, error } = await supabase
       .from("phone_numbers_cp141")
       .select("*")
-      .eq("user_id", user.id) // <- only this user's devices
       .order("created_at", { ascending: false });
     if (error) {
       toast({
@@ -106,15 +96,6 @@ const Dashboard = () => {
     } finally {
       setTestLoading(false);
     }
-  };
-
-  // For the "Last activity" line (uses last_activity_at field)
-  const getLastActivityLabel = (device: PhoneProfile) => {
-    if (!device.last_activity_at) return "No activity recorded";
-    const dateObj = new Date(device.last_activity_at);
-    const now = new Date();
-    const diffHours = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60));
-    return `Last activity: ${dateObj.toLocaleString()} (${diffHours}h ago)`;
   };
 
   return (
@@ -153,6 +134,7 @@ const Dashboard = () => {
           </div>
         </div>
       </header>
+
       <main className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -197,63 +179,73 @@ const Dashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {devices.map((device) => {
-              return (
-                <Card
-                  key={device.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/profile/${device.id}`)}
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-xl">{device.location}</CardTitle>
-                        <CardDescription>
-                          {device.phone_number}
-                        </CardDescription>
-                      </div>
-                      <div className="flex flex-col items-end">
-                        <div className={`text-2xl ${device.active ? "text-green-500" : "text-red-500"}`}>
-                          <Activity className="w-6 h-6" />
-                        </div>
-                        <div className="mt-1 text-xs font-semibold">
-                          {device.active ? (
-                            <span className="text-green-600 flex items-center">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="text-red-500 flex items-center">
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              Inactive
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>
-                          {getLastActivityLabel(device)}
-                        </span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Alert threshold: {intervalToHours(device.no_contact_period)}h
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+  // Format last_activity_at string, fallback to "No activity recorded"
+  let lastActivityLabel = "No activity recorded";
+  if (device.last_activity_at) {
+    const dateObj = new Date(device.last_activity_at);
+    const now = new Date();
+    const diffHours = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60));
+    lastActivityLabel = `Last activity: ${dateObj.toLocaleString()} (${diffHours}h ago)`;
+  }
+
+  return (
+    <Card
+      key={device.id}
+      className="hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={() => navigate(`/profile/${device.id}`)}
+    >
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-xl">{device.location}</CardTitle>
+            <CardDescription>
+              {device.phone_number}
+            </CardDescription>
+          </div>
+          <div className="flex flex-col items-end">
+            <div className={`text-2xl ${device.active ? "text-green-500" : "text-red-500"}`}>
+              <Activity className="w-6 h-6" />
+            </div>
+            <div className="mt-1 text-xs font-semibold">
+              {device.active ? (
+                <span className="text-green-600 flex items-center">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Active
+                </span>
+              ) : (
+                <span className="text-red-500 flex items-center">
+                  <AlertCircle className="w-3 h-3 mr-1" />
+                  Inactive
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <Clock className="w-4 h-4 text-muted-foreground" />
+            <span>
+              {lastActivityLabel}
+            </span>
+          </div>
+          <div className="text-sm text-muted-foreground">
+            Alert threshold: {intervalToHours(device.no_contact_period)}h
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+})}
+
           </div>
         )}
       </main>
       <AddDeviceDialog 
         open={showAddDialog} 
         onOpenChange={setShowAddDialog}
-        onSuccess={user ? loadDevices : undefined}
+        onSuccess={loadDevices}
       />
     </div>
   );
