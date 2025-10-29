@@ -12,6 +12,20 @@ interface AlertHistoryProps {
   // Optionally, to filter by a single device phone number, add:
   // phoneNumber?: string;
 }
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Mail, Phone, PhoneCall, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+// Pass in currentUserId and optionally a phoneNumber to filter further
+interface AlertHistoryProps {
+  userId: string;
+  phoneNumbers: string[];
+  // Optionally, to filter by a single device phone number, add:
+  // phoneNumber?: string;
+}
 
 interface AlertHistoryItem {
   id: string;
