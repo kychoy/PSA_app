@@ -20,6 +20,18 @@ interface PhoneProfile {
   last_activity_at: string | null;
 }
 
+interface DBUser {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  phone_number: string;
+  no_contact_period: string;
+  created_at: string;
+  updated_at: string;
+  notification_method: string;
+}
+
 const intervalToHours = (interval: string) => {
   if (!interval) return "N/A";
   const parts = interval.split(":");
@@ -28,6 +40,7 @@ const intervalToHours = (interval: string) => {
 
 const Dashboard = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [dbUser, setDbUser] = useState<DBUser | null>(null);
   const [devices, setDevices] = useState<PhoneProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -35,7 +48,6 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Load user and set up session watcher just once
   useEffect(() => {
     checkUser();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,11 +57,41 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // When user is set, load devices for this user only
+  // When user is set, fetch dbUser and then devices
   useEffect(() => {
-    if (user) loadDevices();
+    if (user) {
+      fetchDbUser();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  // After dbUser info is loaded, fetch devices
+  useEffect(() => {
+    if (dbUser && user) {
+      loadDevices();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbUser]);
+
+  // Fetch db user from users table
+  const fetchDbUser = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Could not load user profile",
+        description: error.message,
+      });
+      setDbUser(null);
+    } else {
+      setDbUser(data);
+    }
+  };
 
   const checkUser = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -70,7 +112,7 @@ const Dashboard = () => {
     const { data, error } = await supabase
       .from("phone_numbers_cp141")
       .select("*")
-      .eq("user_id", user.id) // <- only this user's devices
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (error) {
       toast({
@@ -89,7 +131,7 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  // New function for Test button
+  // Test button
   const handleTestWebhook = async () => {
     setTestLoading(true);
     try {
@@ -108,7 +150,7 @@ const Dashboard = () => {
     }
   };
 
-  // For the "Last activity" line (uses last_activity_at field)
+  // Last activity formatting
   const getLastActivityLabel = (device: PhoneProfile) => {
     if (!device.last_activity_at) return "No activity recorded";
     const dateObj = new Date(device.last_activity_at);
@@ -166,14 +208,16 @@ const Dashboard = () => {
               <Plus className="w-4 h-4 mr-2" />
               Add Device
             </Button>
-            <Button
-              variant="secondary"
-              onClick={handleTestWebhook}
-              disabled={testLoading}
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              {testLoading ? "Testing..." : "Test"}
-            </Button>
+            {dbUser && dbUser.role === "super" && (
+              <Button
+                variant="secondary"
+                onClick={handleTestWebhook}
+                disabled={testLoading}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                {testLoading ? "Testing..." : "Test"}
+              </Button>
+            )}
           </div>
         </div>
         {loading ? (
