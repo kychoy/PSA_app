@@ -7,51 +7,35 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AlertHistoryItem {
   id: string;
-  alert_method: string;
+  alert_type: string;
+  notification_method: string;
   status: string;
   sent_at: string | null;
   created_at: string;
   message: string;
-  error_message: string | null;
-  contacts: {
-    full_name: string;
-    email: string | null;
-    phone: string | null;
-  } | null;
+  response_log: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  cp141_phone_number: string | null;
 }
 
-interface AlertHistoryProps {
-  elderlyProfileId: string;
-}
-
-const AlertHistory = ({ elderlyProfileId }: AlertHistoryProps) => {
+const AlertHistory = () => {
   const [alerts, setAlerts] = useState<AlertHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     loadAlertHistory();
-  }, [elderlyProfileId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadAlertHistory = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("alert_history")
-      .select(`
-        id,
-        alert_method,
-        status,
-        sent_at,
-        created_at,
-        message,
-        error_message,
-        contacts (
-          full_name,
-          email,
-          phone
-        )
-      `)
-      .eq("elderly_profile_id", elderlyProfileId)
+      .select(
+        "id, alert_type, notification_method, status, sent_at, created_at, message, response_log, contact_email, contact_phone, cp141_phone_number"
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -67,12 +51,13 @@ const AlertHistory = ({ elderlyProfileId }: AlertHistoryProps) => {
   };
 
   const getMethodIcon = (method: string) => {
-    switch (method) {
+    switch (method?.toLowerCase()) {
       case "email":
         return <Mail className="w-4 h-4" />;
       case "sms":
         return <Phone className="w-4 h-4" />;
       case "voice_call":
+      case "voice":
         return <PhoneCall className="w-4 h-4" />;
       default:
         return null;
@@ -108,18 +93,18 @@ const AlertHistory = ({ elderlyProfileId }: AlertHistoryProps) => {
   };
 
   const getContactInfo = (alert: AlertHistoryItem) => {
-    if (!alert.contacts) return "Unknown contact";
-    
-    const contactDetails = [];
-    if (alert.alert_method === "email" && alert.contacts.email) {
-      contactDetails.push(alert.contacts.email);
-    } else if ((alert.alert_method === "sms" || alert.alert_method === "voice_call") && alert.contacts.phone) {
-      contactDetails.push(alert.contacts.phone);
+    if (alert.notification_method?.toLowerCase() === "email" && alert.contact_email) {
+      return alert.contact_email;
     }
-    
-    return contactDetails.length > 0 
-      ? `${alert.contacts.full_name} (${contactDetails.join(", ")})`
-      : alert.contacts.full_name;
+    if (
+      (alert.notification_method?.toLowerCase() === "sms" ||
+        alert.notification_method?.toLowerCase() === "voice_call" ||
+        alert.notification_method?.toLowerCase() === "voice") &&
+      alert.contact_phone
+    ) {
+      return alert.contact_phone;
+    }
+    return alert.cp141_phone_number || "-";
   };
 
   if (loading) {
@@ -135,7 +120,7 @@ const AlertHistory = ({ elderlyProfileId }: AlertHistoryProps) => {
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -150,24 +135,20 @@ const AlertHistory = ({ elderlyProfileId }: AlertHistoryProps) => {
           {alerts.map((alert) => (
             <TableRow key={alert.id}>
               <TableCell className="whitespace-nowrap">
-                {alert.sent_at 
+                {alert.sent_at
                   ? new Date(alert.sent_at).toLocaleString()
                   : new Date(alert.created_at).toLocaleString()}
               </TableCell>
               <TableCell>{getContactInfo(alert)}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
-                  {getMethodIcon(alert.alert_method)}
-                  <span className="capitalize">{alert.alert_method.replace("_", " ")}</span>
+                  {getMethodIcon(alert.notification_method)}
+                  <span className="capitalize">{alert.notification_method.replace("_", " ")}</span>
                 </div>
               </TableCell>
               <TableCell>{getStatusBadge(alert.status)}</TableCell>
               <TableCell className="max-w-xs truncate">
-                {alert.error_message ? (
-                  <span className="text-destructive text-sm">{alert.error_message}</span>
-                ) : (
-                  <span className="text-sm">{alert.message}</span>
-                )}
+                {alert.message}
               </TableCell>
             </TableRow>
           ))}
