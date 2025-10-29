@@ -6,7 +6,7 @@ import { Mail, Phone, PhoneCall, CheckCircle2, XCircle, Clock } from "lucide-rea
 import { useToast } from "@/hooks/use-toast";
 
 interface AlertHistoryProps {
-  userId: string;
+  userId?: string; // Ensure parent passes the supabase user.id here
 }
 
 interface AlertHistoryItem {
@@ -28,11 +28,16 @@ const AlertHistory = ({ userId }: AlertHistoryProps) => {
   const { toast } = useToast();
 
   useEffect(() => {
-    loadAlertHistory();
+    if (!userId) {
+      setAlerts([]);
+      setLoading(false);
+      return;
+    }
+    loadAlertHistory(userId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const loadAlertHistory = async () => {
+  const loadAlertHistory = async (userId: string) => {
     setLoading(true);
     const { data, error } = await supabase
       .from("alert_history")
@@ -96,6 +101,10 @@ const AlertHistory = ({ userId }: AlertHistoryProps) => {
     }
   };
 
+  if (!userId) {
+    return <p className="text-center text-muted-foreground py-8">Loading user...</p>;
+  }
+
   if (loading) {
     return <p className="text-center text-muted-foreground py-8">Loading alert history...</p>;
   }
@@ -148,4 +157,5 @@ const AlertHistory = ({ userId }: AlertHistoryProps) => {
 };
 
 export default AlertHistory;
+
 
