@@ -5,6 +5,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Mail, Phone, PhoneCall, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+interface AlertHistoryProps {
+  userId?: string;
+}
+
 interface AlertHistoryItem {
   id: string;
   alert_type: string;
@@ -19,23 +23,30 @@ interface AlertHistoryItem {
   cp141_phone_number: string | null;
 }
 
-const AlertHistory = () => {
+const AlertHistory = ({ userId }: AlertHistoryProps) => {
   const [alerts, setAlerts] = useState<AlertHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!userId) {
+      setAlerts([]);
+      setLoading(false);
+      return;
+    }
     loadAlertHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userId]);
 
   const loadAlertHistory = async () => {
+    if (!userId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("alert_history")
       .select(
         "id, alert_type, notification_method, status, sent_at, created_at, message, response_log, contact_email, contact_phone, cp141_phone_number"
       )
+      .eq("user_id", userId)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -107,6 +118,10 @@ const AlertHistory = () => {
     return alert.cp141_phone_number || "-";
   };
 
+  if (!userId) {
+    return <p className="text-center text-muted-foreground py-8">Loading user...</p>;
+  }
+
   if (loading) {
     return <p className="text-center text-muted-foreground py-8">Loading alert history...</p>;
   }
@@ -159,4 +174,3 @@ const AlertHistory = () => {
 };
 
 export default AlertHistory;
-

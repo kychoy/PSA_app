@@ -182,17 +182,19 @@ const PhoneProfile = () => {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Alert History</CardTitle>
-              <CardDescription>
-                View all alerts sent to emergency contacts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AlertHistory phoneProfileId={profile.id} />
-            </CardContent>
-          </Card>
+         <Card>
+  <CardHeader>
+    <CardTitle>Alert History</CardTitle>
+    <CardDescription>
+      View all alerts sent to emergency contacts
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    {/* OLD: <AlertHistory phoneProfileId={profile.id} /> */}
+    <AlertHistory userId={profile.user_id} />
+  </CardContent>
+</Card>
+
         </div>
       </div>
     </div>
