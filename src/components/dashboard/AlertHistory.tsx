@@ -5,26 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Mail, Phone, PhoneCall, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Pass in currentUserId and optionally a phoneNumber to filter further
 interface AlertHistoryProps {
   userId: string;
-  phoneNumbers: string[];
-  // Optionally, to filter by a single device phone number, add:
-  // phoneNumber?: string;
-}
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Mail, Phone, PhoneCall, CheckCircle2, XCircle, Clock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-// Pass in currentUserId and optionally a phoneNumber to filter further
-interface AlertHistoryProps {
-  userId: string;
-  phoneNumbers: string[];
-  // Optionally, to filter by a single device phone number, add:
-  // phoneNumber?: string;
 }
 
 interface AlertHistoryItem {
@@ -40,7 +22,7 @@ interface AlertHistoryItem {
   cp141_phone_number: string | null;
 }
 
-const AlertHistory = ({ userId, phoneNumbers }: AlertHistoryProps) => {
+const AlertHistory = ({ userId }: AlertHistoryProps) => {
   const [alerts, setAlerts] = useState<AlertHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -48,23 +30,17 @@ const AlertHistory = ({ userId, phoneNumbers }: AlertHistoryProps) => {
   useEffect(() => {
     loadAlertHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, phoneNumbers?.join(",")]);
+  }, [userId]);
 
   const loadAlertHistory = async () => {
     setLoading(true);
-    // Only fetch alerts for current user & their phone numbers
-    let query = supabase
+    const { data, error } = await supabase
       .from("alert_history")
       .select(
         "id, alert_type, notification_method, status, sent_at, created_at, response_log, contact_email, contact_phone, cp141_phone_number"
       )
-      .eq("user_id", userId);
-
-    if (phoneNumbers.length) {
-      query = query.in("cp141_phone_number", phoneNumbers);
-    }
-
-    const { data, error } = await query.order("created_at", { ascending: false });
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
 
     if (error) {
       toast({
@@ -172,3 +148,4 @@ const AlertHistory = ({ userId, phoneNumbers }: AlertHistoryProps) => {
 };
 
 export default AlertHistory;
+
