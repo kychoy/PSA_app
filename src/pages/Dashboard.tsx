@@ -38,12 +38,128 @@ const intervalToHours = (interval: string) => {
   return parseInt(parts[0], 10);
 };
 
-// ...all imports remain unchanged (as in your original)
-
 const Dashboard = () => {
-  // ...all hooks and logic unchanged
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [dbUser, setDbUser] = useState<DBUser | null>(null);
+  const [devices, setDevices] = useState<PhoneProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  return (
+  useEffect(() => {
+    checkUser();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (!session?.user) navigate("/auth");
+    });
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  // When user is set, fetch dbUser and then devices
+  useEffect(() => {
+    if (user) {
+      fetchDbUser();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // After dbUser info is loaded, fetch devices
+  useEffect(() => {
+    if (dbUser && user) {
+      loadDevices();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbUser]);
+
+  // Fetch db user from users table
+  const fetchDbUser = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Could not load user profile",
+        description: error.message,
+      });
+      setDbUser(null);
+    } else {
+      setDbUser(data);
+    }
+  };
+
+  const checkUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) {
+      navigate("/auth");
+      return;
+    }
+    setUser(session.user);
+  };
+
+  const loadDevices = async () => {
+    setLoading(true);
+    if (!user) {
+      setDevices([]);
+      setLoading(false);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("phone_numbers_cp141")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error loading devices",
+        description: error.message,
+      });
+    } else {
+      setDevices(data || []);
+    }
+    setLoading(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
+  // Test button
+  const handleTestWebhook = async () => {
+    setTestLoading(true);
+    try {
+      const res = await fetch("https://n8n.vocahk.com/webhook/6be3ae5f-45c2-4c12-b410-2e1fb4cdedc3", {
+        method: "POST",
+      });
+      if (res.ok) {
+        toast({ title: "Test webhook triggered!", description: "Webhook executed successfully." });
+      } else {
+        toast({ variant: "destructive", title: "Webhook error", description: "Failed to trigger webhook." });
+      }
+    } catch (err) {
+      toast({ variant: "destructive", title: "Webhook error", description: String(err) });
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
+  // Last activity formatting
+  const getLastActivityLabel = (device: PhoneProfile) => {
+    if (!device.last_activity_at) return "No activity recorded";
+    const dateObj = new Date(device.last_activity_at);
+    const now = new Date();
+    const diffHours = Math.floor((now.getTime() - dateObj.getTime()) / (1000 * 60 * 60));
+    return `Last activity: ${dateObj.toLocaleString()} (${diffHours}h ago)`;
+  };
+
+ return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-2 sm:px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -179,4 +295,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
