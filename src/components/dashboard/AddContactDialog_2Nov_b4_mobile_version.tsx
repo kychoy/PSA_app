@@ -36,9 +36,6 @@ interface AddContactDialogProps {
   contact?: Contact | null;
 }
 
-// For mobile version
-// ...imports remain unchanged
-
 export function AddContactDialog({
   open,
   onOpenChange,
@@ -77,32 +74,55 @@ export function AddContactDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      if (!formData.contact_name.trim()) throw new Error("Name is required");
-      if (!formData.email && !formData.phone_number) throw new Error("Please provide at least email or phone number");
-      if (formData.notification_method.length === 0) throw new Error("Please select at least one alert method");
 
-      const contactData = {
-        contact_name: formData.contact_name.trim(),
-        relationship: formData.relationship.trim() || null,
-        email: formData.email.trim() || null,
-        phone_number: formData.phone_number.trim() || null,
-        notification_method: formData.notification_method,
-        user_id: userId,
-      };
+    try {
+      if (!formData.contact_name.trim()) {
+        throw new Error("Name is required");
+      }
+
+      if (!formData.email && !formData.phone_number) {
+        throw new Error("Please provide at least email or phone number");
+      }
+
+      if (formData.notification_method.length === 0) {
+        throw new Error("Please select at least one alert method");
+      }
+
+    const contactData = {
+       contact_name: formData.contact_name.trim(),
+       relationship: formData.relationship.trim() || null,
+       email: formData.email.trim() || null,
+       phone_number: formData.phone_number.trim() || null,
+       notification_method: formData.notification_method, // array
+       user_id: userId, // from props
+};
+
 
       if (contact) {
         const { error } = await supabase
           .from("user_contacts")
           .update(contactData)
           .eq("id", contact.id);
+
         if (error) throw error;
-        toast({ title: "Success", description: "Contact updated successfully" });
+
+        toast({
+          title: "Success",
+          description: "Contact updated successfully",
+        });
       } else {
-        const { error } = await supabase.from("user_contacts").insert([contactData]);
+        const { error } = await supabase
+          .from("user_contacts")
+          .insert([contactData]);
+
         if (error) throw error;
-        toast({ title: "Success", description: "Contact added successfully" });
+
+        toast({
+          title: "Success",
+          description: "Contact added successfully",
+        });
       }
+
       onOpenChange(false);
     } catch (error: any) {
       toast({
@@ -117,16 +137,14 @@ export function AddContactDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] max-w-full sm:max-w-[500px] p-3 sm:p-6">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="text-base sm:text-lg">
-            {contact ? "Edit Contact" : "Add Emergency Contact"}
-          </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
+          <DialogTitle>{contact ? "Edit Contact" : "Add Emergency Contact"}</DialogTitle>
+          <DialogDescription>
             Add family members, friends, or caregivers who should receive alerts
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="contact_name">Contact Name *</Label>
             <Input
@@ -137,7 +155,6 @@ export function AddContactDialog({
               }
               placeholder="Enter contact name"
               required
-              className="text-sm"
             />
           </div>
 
@@ -150,7 +167,6 @@ export function AddContactDialog({
                 setFormData({ ...formData, relationship: e.target.value })
               }
               placeholder="e.g., Daughter, Son, Friend, Neighbor"
-              className="text-sm"
             />
           </div>
 
@@ -164,7 +180,6 @@ export function AddContactDialog({
                 setFormData({ ...formData, email: e.target.value })
               }
               placeholder="contact@example.com"
-              className="text-sm"
             />
           </div>
 
@@ -178,13 +193,12 @@ export function AddContactDialog({
                 setFormData({ ...formData, phone_number: e.target.value })
               }
               placeholder="+1234567890"
-              className="text-sm"
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Alert Methods *</Label>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Select all methods to receive alerts
             </p>
             <div className="space-y-2">
@@ -199,7 +213,10 @@ export function AddContactDialog({
                     setFormData({ ...formData, notification_method: methods });
                   }}
                 />
-                <label htmlFor="email-method" className="text-xs sm:text-sm font-medium">
+                <label
+                  htmlFor="email-method"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
                   Email
                 </label>
               </div>
@@ -214,7 +231,10 @@ export function AddContactDialog({
                     setFormData({ ...formData, notification_method: methods });
                   }}
                 />
-                <label htmlFor="sms-method" className="text-xs sm:text-sm font-medium">
+                <label
+                  htmlFor="sms-method"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
                   SMS
                 </label>
               </div>
@@ -229,23 +249,26 @@ export function AddContactDialog({
                     setFormData({ ...formData, notification_method: methods });
                   }}
                 />
-                <label htmlFor="voice-method" className="text-xs sm:text-sm font-medium">
+                <label
+                  htmlFor="voice-method"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
                   Voice Call
                 </label>
               </div>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="w-full sm:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+            <Button type="submit" disabled={loading}>
               {loading ? "Saving..." : contact ? "Update" : "Add Contact"}
             </Button>
           </div>
