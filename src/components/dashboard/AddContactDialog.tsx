@@ -10,13 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -35,9 +28,6 @@ interface AddContactDialogProps {
   userId: string;
   contact?: Contact | null;
 }
-
-// For mobile version
-// ...imports remain unchanged
 
 export function AddContactDialog({
   open,
@@ -117,7 +107,7 @@ export function AddContactDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] max-w-full sm:max-w-[500px] p-3 sm:p-6">
+      <DialogContent className="max-w-full w-[98vw] sm:max-w-[450px] p-3 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-base sm:text-lg">
             {contact ? "Edit Contact" : "Add Emergency Contact"}
@@ -126,7 +116,7 @@ export function AddContactDialog({
             Add family members, friends, or caregivers who should receive alerts
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4 w-full">
           <div className="space-y-2">
             <Label htmlFor="contact_name">Contact Name *</Label>
             <Input
@@ -188,55 +178,27 @@ export function AddContactDialog({
               Select all methods to receive alerts
             </p>
             <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="email-method"
-                  checked={formData.notification_method.includes("email")}
-                  onCheckedChange={(checked) => {
-                    const methods = checked
-                      ? [...formData.notification_method, "email"]
-                      : formData.notification_method.filter((m) => m !== "email");
-                    setFormData({ ...formData, notification_method: methods });
-                  }}
-                />
-                <label htmlFor="email-method" className="text-xs sm:text-sm font-medium">
-                  Email
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="sms-method"
-                  checked={formData.notification_method.includes("sms")}
-                  onCheckedChange={(checked) => {
-                    const methods = checked
-                      ? [...formData.notification_method, "sms"]
-                      : formData.notification_method.filter((m) => m !== "sms");
-                    setFormData({ ...formData, notification_method: methods });
-                  }}
-                />
-                <label htmlFor="sms-method" className="text-xs sm:text-sm font-medium">
-                  SMS
-                </label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="voice-method"
-                  checked={formData.notification_method.includes("voice")}
-                  onCheckedChange={(checked) => {
-                    const methods = checked
-                      ? [...formData.notification_method, "voice"]
-                      : formData.notification_method.filter((m) => m !== "voice");
-                    setFormData({ ...formData, notification_method: methods });
-                  }}
-                />
-                <label htmlFor="voice-method" className="text-xs sm:text-sm font-medium">
-                  Voice Call
-                </label>
-              </div>
+              {["email", "sms", "voice"].map((method) => (
+                <div key={method} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`${method}-method`}
+                    checked={formData.notification_method.includes(method)}
+                    onCheckedChange={(checked) => {
+                      const methods = checked
+                        ? [...formData.notification_method, method]
+                        : formData.notification_method.filter((m) => m !== method);
+                      setFormData({ ...formData, notification_method: methods });
+                    }}
+                  />
+                  <label htmlFor={`${method}-method`} className="text-xs sm:text-sm font-medium capitalize">
+                    {method === "voice" ? "Voice Call" : method.toUpperCase()}
+                  </label>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+          <div className="flex flex-col gap-2 sm:flex-row sm:justify-end w-full pt-2 mt-2">
             <Button
               type="button"
               variant="outline"
