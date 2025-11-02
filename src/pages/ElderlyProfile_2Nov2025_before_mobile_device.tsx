@@ -8,13 +8,14 @@ import { ArrowLeft, Activity, Clock, Smartphone } from "lucide-react";
 import ContactList from "@/components/dashboard/ContactList";
 import AlertHistory from "@/components/dashboard/AlertHistory";
 
+// Table: phone_numbers_cp141
 interface PhoneProfileData {
   id: string;
-  user_id: string;
+  user_id: string; // <-- Add this
   location: string;
   phone_number: string;
   last_activity_at: string | null;
-  no_contact_period: string;
+  no_contact_period: string; // interval, e.g. "24:00:00"
   active: boolean;
   status: string;
   created_at: string;
@@ -39,12 +40,14 @@ const PhoneProfile = () => {
 
   const loadProfile = async () => {
     if (!id) return;
+
     setLoading(true);
     const { data, error } = await supabase
       .from("phone_numbers_cp141")
       .select("*")
       .eq("id", id)
       .single();
+
     if (error) {
       toast({
         variant: "destructive",
@@ -80,7 +83,7 @@ const PhoneProfile = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-        <div className="container mx-auto p-4 md:p-6">
+        <div className="container mx-auto p-6">
           <p className="text-center text-muted-foreground">Loading...</p>
         </div>
       </div>
@@ -95,103 +98,103 @@ const PhoneProfile = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="w-full max-w-2xl md:max-w-4xl mx-auto p-2 md:p-6">
+      <div className="container mx-auto p-6">
         <Button
           variant="ghost"
           onClick={() => navigate("/dashboard")}
-          className="mb-4 md:mb-6"
-          size="sm"
+          className="mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
 
-        <div className="space-y-4 md:space-y-6">
-          {/* Device Info */}
-          <Card className="w-full">
+        <div className="space-y-6">
+          <Card>
             <CardHeader>
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between md:mb-2">
+              <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-lg md:text-2xl">{profile.location}</CardTitle>
-                  <CardDescription className="text-sm md:text-base break-all">
+                  <CardTitle className="text-2xl">{profile.location}</CardTitle>
+                  <CardDescription>
                     {profile.phone_number}
                   </CardDescription>
                 </div>
-                <div className={`text-2xl md:text-3xl mt-2 md:mt-0 ${activityStatus.color}`}>
-                  <Activity className="w-6 h-6 md:w-8 md:h-8" />
+                <div className={`text-3xl ${activityStatus.color}`}>
+                  <Activity className="w-8 h-8" />
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3 text-sm">
-                {/* Activity status */}
+              <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <Clock className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <span className="font-medium">Activity Status: </span>
-                    <span className={activityStatus.color}>{activityStatus.message}</span>
+                    <p className="text-sm font-medium">Activity Status</p>
+                    <p className={`text-sm ${activityStatus.color}`}>
+                      {activityStatus.message}
+                    </p>
                   </div>
                 </div>
 
                 {profile.last_activity_at && (
                   <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
+                    <Clock className="w-5 h-5 text-muted-foreground" />
                     <div>
-                      <span className="font-medium">Last Activity: </span>
-                      <span className="text-muted-foreground">
+                      <p className="text-sm font-medium">Last Activity</p>
+                      <p className="text-sm text-muted-foreground">
                         {new Date(profile.last_activity_at).toLocaleString()}
-                      </span>
+                      </p>
                     </div>
                   </div>
                 )}
 
                 <div className="flex items-center gap-2">
-                  <Smartphone className="w-4 h-4 text-muted-foreground" />
+                  <Smartphone className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <span className="font-medium">Alert Threshold: </span>
-                    <span className="text-muted-foreground">
+                    <p className="text-sm font-medium">Alert Threshold</p>
+                    <p className="text-sm text-muted-foreground">
                       {intervalToHours(profile.no_contact_period)} hours
-                    </span>
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <Clock className="w-5 h-5 text-muted-foreground" />
                   <div>
-                    <span className="font-medium">Status: </span>
-                    <span className="text-muted-foreground">
+                    <p className="text-sm font-medium">Status</p>
+                    <p className="text-sm text-muted-foreground">
                       {profile.active ? "Active" : "Inactive"}
-                    </span>
+                    </p>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Contacts */}
-          <Card className="w-full">
+          <Card>
             <CardHeader>
-              <CardTitle className="text-base md:text-lg">Emergency Contacts</CardTitle>
+              <CardTitle>Emergency Contacts</CardTitle>
               <CardDescription>
                 Manage contacts who will be alerted if prolonged inactivity is detected
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Key fix: pass userId, not phoneProfileId */}
               <ContactList userId={profile.user_id} />
             </CardContent>
           </Card>
 
-          {/* Alert History */}
-          <Card className="w-full overflow-x-auto">
-            <CardHeader>
-              <CardTitle className="text-base md:text-lg">Alert History</CardTitle>
-              <CardDescription>
-                View all alerts sent to emergency contacts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AlertHistory userId={profile.user_id} />
-            </CardContent>
-          </Card>
+         <Card>
+  <CardHeader>
+    <CardTitle>Alert History</CardTitle>
+    <CardDescription>
+      View all alerts sent to emergency contacts
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    {/* OLD: <AlertHistory phoneProfileId={profile.id} /> */}
+    <AlertHistory userId={profile.user_id} />
+  </CardContent>
+</Card>
+
         </div>
       </div>
     </div>
@@ -199,5 +202,4 @@ const PhoneProfile = () => {
 };
 
 export default PhoneProfile;
-
 
