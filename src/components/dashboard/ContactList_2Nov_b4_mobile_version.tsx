@@ -23,7 +23,7 @@ interface Contact {
   relationship: string | null;
   email: string | null;
   phone_number: string | null;
-  notification_method: string[];
+  notification_method: string[]; // multi-select
 }
 
 interface ContactListProps {
@@ -67,6 +67,7 @@ export default function ContactList({ userId }: ContactListProps) {
         .select("*")
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
+
       if (error) throw error;
       setContacts(data || []);
     } catch (error: any) {
@@ -91,7 +92,9 @@ export default function ContactList({ userId }: ContactListProps) {
         .from("user_contacts")
         .delete()
         .eq("id", id);
+
       if (error) throw error;
+
       toast({
         title: "Success",
         description: "Contact deleted successfully",
@@ -131,35 +134,27 @@ export default function ContactList({ userId }: ContactListProps) {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0">
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <Users className="h-5 w-5 text-muted-foreground" />
-          <h3 className="text-base sm:text-lg font-semibold">Emergency Contacts</h3>
+          <h3 className="text-lg font-semibold">Emergency Contacts</h3>
         </div>
-        <Button
-          onClick={() => setShowAddDialog(true)}
-          size="sm"
-          className="w-full sm:w-auto"
-        >
+        <Button onClick={() => setShowAddDialog(true)} size="sm">
           <UserPlus className="h-4 w-4 mr-2" />
           Add Contact
         </Button>
       </div>
 
       {contacts.length === 0 ? (
-        <Card className="p-6 sm:p-8">
+        <Card className="p-8">
           <div className="text-center">
-            <Users className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground mb-3 sm:mb-4" />
-            <h4 className="text-base sm:text-lg font-semibold mb-2">No contacts added yet</h4>
-            <p className="text-muted-foreground mb-3 sm:mb-4">
+            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h4 className="text-lg font-semibold mb-2">No contacts added yet</h4>
+            <p className="text-muted-foreground mb-4">
               Add emergency contacts to receive alerts
             </p>
-            <Button
-              onClick={() => setShowAddDialog(true)}
-              variant="outline"
-              className="w-full sm:w-auto"
-            >
+            <Button onClick={() => setShowAddDialog(true)} variant="outline">
               <UserPlus className="h-4 w-4 mr-2" />
               Add First Contact
             </Button>
@@ -168,10 +163,10 @@ export default function ContactList({ userId }: ContactListProps) {
       ) : (
         <div className="grid gap-3">
           {contacts.map((contact) => (
-            <Card key={contact.id} className="p-3 sm:p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div className="space-y-2 flex-1 w-full">
-                  <div className="flex flex-wrap items-center gap-2">
+            <Card key={contact.id} className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
                     <h4 className="font-semibold">{contact.contact_name}</h4>
                     {contact.relationship && (
                       <Badge variant="secondary">{contact.relationship}</Badge>
@@ -179,13 +174,13 @@ export default function ContactList({ userId }: ContactListProps) {
                   </div>
                   <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                     {contact.email && (
-                      <div className="flex items-center gap-2 break-all">
+                      <div className="flex items-center gap-2">
                         <Mail className="h-3 w-3" />
                         {contact.email}
                       </div>
                     )}
                     {contact.phone_number && (
-                      <div className="flex items-center gap-2 break-all">
+                      <div className="flex items-center gap-2">
                         <Phone className="h-3 w-3" />
                         {contact.phone_number}
                       </div>
@@ -201,11 +196,10 @@ export default function ContactList({ userId }: ContactListProps) {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-2 sm:mt-0 w-full sm:w-auto justify-end">
+                <div className="flex gap-2">
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Edit"
                     onClick={() => handleEdit(contact)}
                   >
                     <Edit2 className="h-4 w-4" />
@@ -213,7 +207,6 @@ export default function ContactList({ userId }: ContactListProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    aria-label="Delete"
                     onClick={() => setDeletingContactId(contact.id)}
                   >
                     <Trash2 className="h-4 w-4" />
