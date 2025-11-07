@@ -18,8 +18,6 @@ interface PhoneProfile {
   location: string;
   active: boolean;
   last_activity_at: string | null;
-  alert_count?: number | null;
-  expiration_date?: string | null;
 }
 
 interface DBUser {
@@ -59,6 +57,7 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
+  // When user is set, fetch dbUser and then devices
   useEffect(() => {
     if (user) {
       fetchDbUser();
@@ -66,6 +65,7 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  // After dbUser info is loaded, fetch devices
   useEffect(() => {
     if (dbUser && user) {
       loadDevices();
@@ -73,6 +73,7 @@ const Dashboard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbUser]);
 
+  // Fetch db user from users table
   const fetchDbUser = async () => {
     if (!user) return;
     const { data, error } = await supabase
@@ -130,6 +131,7 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
+  // Test button
   const handleTestWebhook = async () => {
     setTestLoading(true);
     try {
@@ -148,6 +150,7 @@ const Dashboard = () => {
     }
   };
 
+  // Last activity formatting
   const getLastActivityLabel = (device: PhoneProfile) => {
     if (!device.last_activity_at) return "No activity recorded";
     const dateObj = new Date(device.last_activity_at);
@@ -156,15 +159,7 @@ const Dashboard = () => {
     return `Last activity: ${dateObj.toLocaleString()} (${diffHours}h ago)`;
   };
 
-  if (!user || !dbUser) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Loading...</p>
-      </div>
-    );
-  }
-
-  return (
+ return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-2 sm:px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -238,70 +233,55 @@ const Dashboard = () => {
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {devices.map((device) => {
-              // Alert logic
-              const showAlertIcon =
-                Number(device.alert_count) > 0 &&
-                device.active &&
-                device.expiration_date &&
-                new Date() <= new Date(device.expiration_date);
-
-              return (
-                <Card
-                  key={device.id}
-                  className="hover:shadow-lg transition-shadow cursor-pointer px-3 py-4 sm:p-6 w-full relative"
-                  onClick={() => navigate(`/profile/${device.id}`)}
-                >
-                  {/* Alert Icon Overlay (absolute for corner display) */}
-                  {showAlertIcon && (
-                    <div className="absolute top-2 right-2 z-10">
-                      <AlertCircle className="w-6 h-6 text-red-600 animate-pulse" title="Alert Active" />
+            {devices.map((device) => (
+              <Card
+                key={device.id}
+                className="hover:shadow-lg transition-shadow cursor-pointer px-3 py-4 sm:p-6 w-full"
+                onClick={() => navigate(`/profile/${device.id}`)}
+              >
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="w-full flex flex-col gap-1">
+                      <CardTitle className="text-base sm:text-xl">{device.location}</CardTitle>
+                      <CardDescription className="text-xs sm:text-base break-all">
+                        {device.phone_number}
+                      </CardDescription>
                     </div>
-                  )}
-                  <CardHeader>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                      <div className="w-full flex flex-col gap-1">
-                        <CardTitle className="text-base sm:text-xl">{device.location}</CardTitle>
-                        <CardDescription className="text-xs sm:text-base break-all">
-                          {device.phone_number}
-                        </CardDescription>
+                    <div className="flex flex-col items-end">
+                      <div className={`text-xl sm:text-2xl ${device.active ? "text-green-500" : "text-red-500"}`}>
+                        <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="flex flex-col items-end">
-                        <div className={`text-xl sm:text-2xl ${device.active ? "text-green-500" : "text-red-500"}`}>
-                          <Activity className="w-5 h-5 sm:w-6 sm:h-6" />
-                        </div>
-                        <div className="mt-1 text-xs font-semibold">
-                          {device.active ? (
-                            <span className="text-green-600 flex items-center">
-                              <CheckCircle className="w-3 h-3 mr-1" />
-                              Active
-                            </span>
-                          ) : (
-                            <span className="text-red-500 flex items-center">
-                              <AlertCircle className="w-3 h-3 mr-1" />
-                              Inactive
-                            </span>
-                          )}
-                        </div>
+                      <div className="mt-1 text-xs font-semibold">
+                        {device.active ? (
+                          <span className="text-green-600 flex items-center">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Active
+                          </span>
+                        ) : (
+                          <span className="text-red-500 flex items-center">
+                            <AlertCircle className="w-3 h-3 mr-1" />
+                            Inactive
+                          </span>
+                        )}
                       </div>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-xs sm:text-sm">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <span>
-                          {getLastActivityLabel(device)}
-                        </span>
-                      </div>
-                      <div className="text-xs sm:text-sm text-muted-foreground">
-                        Alert threshold: {intervalToHours(device.no_contact_period)}h
-                      </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <span>
+                        {getLastActivityLabel(device)}
+                      </span>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    <div className="text-xs sm:text-sm text-muted-foreground">
+                      Alert threshold: {intervalToHours(device.no_contact_period)}h
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </main>
