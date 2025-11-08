@@ -7,7 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 
 interface AlertHistoryProps {
   userId?: string;
-  phoneNumbers?: string[]; // Add this prop!
 }
 
 interface AlertHistoryItem {
@@ -24,23 +23,23 @@ interface AlertHistoryItem {
   cp141_phone_number: string | null;
 }
 
-const AlertHistory = ({ userId, phoneNumbers }: AlertHistoryProps) => {
+const AlertHistory = ({ userId }: AlertHistoryProps) => {
   const [alerts, setAlerts] = useState<AlertHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!userId || !phoneNumbers || phoneNumbers.length === 0) {
+    if (!userId) {
       setAlerts([]);
       setLoading(false);
       return;
     }
     loadAlertHistory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, JSON.stringify(phoneNumbers)]);
+  }, [userId]);
 
   const loadAlertHistory = async () => {
-    if (!userId || !phoneNumbers || phoneNumbers.length === 0) return;
+    if (!userId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("alert_history")
@@ -48,7 +47,6 @@ const AlertHistory = ({ userId, phoneNumbers }: AlertHistoryProps) => {
         "id, alert_type, notification_method, status, sent_at, created_at, message, response_log, contact_email, contact_phone, cp141_phone_number"
       )
       .eq("user_id", userId)
-      .in("cp141_phone_number", phoneNumbers)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -120,8 +118,8 @@ const AlertHistory = ({ userId, phoneNumbers }: AlertHistoryProps) => {
     return alert.cp141_phone_number || "-";
   };
 
-  if (!userId || !phoneNumbers || phoneNumbers.length === 0) {
-    return <p className="text-center text-muted-foreground py-8">Loading alert history...</p>;
+  if (!userId) {
+    return <p className="text-center text-muted-foreground py-8">Loading user...</p>;
   }
 
   if (loading) {
