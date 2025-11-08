@@ -182,17 +182,16 @@ const PhoneProfile = () => {
 
           {/* Alert History */}
           <Card className="w-full overflow-x-auto">
-  <CardHeader>
-    <CardTitle className="text-base md:text-lg">Alert History</CardTitle>
-    <CardDescription>
-      View all alerts sent to emergency contacts
-    </CardDescription>
-  </CardHeader>
-  <CardContent>
-    <AlertHistory userId={profile.user_id} phoneNumbers={[profile.phone_number]} />
-  </CardContent>
-</Card>
-
+            <CardHeader>
+              <CardTitle className="text-base md:text-lg">Alert History</CardTitle>
+              <CardDescription>
+                View all alerts sent to emergency contacts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AlertHistory userId={profile.user_id} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
