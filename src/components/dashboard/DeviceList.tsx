@@ -100,8 +100,8 @@ export const DeviceList = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Phone Locations</h2>
-          <p className="text-muted-foreground">Manage monitored phone numbers and locations</p>
+          <h2 className="text-2xl font-bold">Devices</h2>
+          <p className="text-muted-foreground">Manage monitored phone numbers</p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
